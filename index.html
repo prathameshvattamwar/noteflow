@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteFlow - Enhanced Notepad</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Polyfill for localStorage -->
+    <script>
+        // Create a fallback storage mechanism if localStorage isn't available
+        (function() {
+            try {
+                // Test localStorage availability
+                var storage = window.localStorage;
+                var x = '__storage_test__';
+                storage.setItem(x, x);
+                storage.removeItem(x);
+                
+                // If we get here, localStorage is available
+                console.log("localStorage is available");
+            } catch(e) {
+                // localStorage not available, create memory fallback
+                console.warn("localStorage not available, using memory storage fallback");
+                
+                var memoryStorage = {};
+                
+                window.localStorage = {
+                    getItem: function(key) {
+                        return memoryStorage[key] || null;
+                    },
+                    setItem: function(key, value) {
+                        memoryStorage[key] = value.toString();
+                    },
+                    removeItem: function(key) {
+                        delete memoryStorage[key];
+                    },
+                    clear: function() {
+                        memoryStorage = {};
+                    }
+                };
+            }
+        })();
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <i class="fa-solid fa-pen-to-square"></i>
+                <div class="app-title">NoteFlow</div>
+            </div>
+            <div class="header-actions">
+                <button id="theme-toggle" class="icon-button" title="Toggle Dark Mode">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+                <button id="save-all" class="primary-button">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>Save All</span>
+                </button>
+            </div>
+        </header>
+        
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <select id="font-family" class="styled-select">
+                    <option value="'Poppins', sans-serif">Poppins</option>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="'Times New Roman', serif">Times New Roman</option>
+                    <option value="'Courier New', monospace">Courier New</option>
+                    <option value="Georgia, serif">Georgia</option>
+                    <option value="Verdana, sans-serif">Verdana</option>
+                    <option value="'Roboto', sans-serif">Roboto</option>
+                </select>
+                
+                <select id="font-size" class="styled-select">
+                    <option value="1">Small</option>
+                    <option value="2" selected>Normal</option>
+                    <option value="3">Medium</option>
+                    <option value="4">Large</option>
+                    <option value="5">X-Large</option>
+                    <option value="6">XX-Large</option>
+                </select>
+            </div>
+            
+            <div class="toolbar-group">
+                <button id="bold" class="icon-button" title="Bold">
+                    <i class="fa-solid fa-bold"></i>
+                </button>
+                <button id="italic" class="icon-button" title="Italic">
+                    <i class="fa-solid fa-italic"></i>
+                </button>
+                <button id="underline" class="icon-button" title="Underline">
+                    <i class="fa-solid fa-underline"></i>
+                </button>
+                <button id="strikethrough" class="icon-button" title="Strikethrough">
+                    <i class="fa-solid fa-strikethrough"></i>
+                </button>
+            </div>
+            
+            <div class="toolbar-group">
+                <button id="align-left" class="icon-button" title="Align Left">
+                    <i class="fa-solid fa-align-left"></i>
+                </button>
+                <button id="align-center" class="icon-button" title="Align Center">
+                    <i class="fa-solid fa-align-center"></i>
+                </button>
+                <button id="align-right" class="icon-button" title="Align Right">
+                    <i class="fa-solid fa-align-right"></i>
+                </button>
+            </div>
+            
+            <div class="toolbar-group">
+                <button id="ordered-list" class="icon-button" title="Ordered List">
+                    <i class="fa-solid fa-list-ol"></i>
+                </button>
+                <button id="unordered-list" class="icon-button" title="Unordered List">
+                    <i class="fa-solid fa-list-ul"></i>
+                </button>
+            </div>
+            
+            <div class="toolbar-group">
+                <button id="indent" class="icon-button" title="Indent">
+                    <i class="fa-solid fa-indent"></i>
+                </button>
+                <button id="outdent" class="icon-button" title="Outdent">
+                    <i class="fa-solid fa-outdent"></i>
+                </button>
+            </div>
+            
+            <div class="toolbar-group">
+                <button id="insert-link" class="icon-button" title="Insert Link">
+                    <i class="fa-solid fa-link"></i>
+                </button>
+                <button id="insert-image" class="icon-button" title="Insert Image">
+                    <i class="fa-solid fa-image"></i>
+                </button>
+            </div>
+            
+            <div class="toolbar-group">
+                <div class="color-control">
+                    <label for="text-color" title="Text Color">
+                        <i class="fa-solid fa-palette"></i>
+                    </label>
+                    <input type="color" id="text-color" class="color-picker" value="#000000">
+                </div>
+                
+                <div class="color-control">
+                    <label for="highlight-color" title="Highlight Color">
+                        <i class="fa-solid fa-highlighter"></i>
+                    </label>
+                    <input type="color" id="highlight-color" class="color-picker" value="#ffff00">
+                </div>
+            </div>
+        </div>
+        
+        <div class="tabs" id="tabs">
+            <button class="new-tab" id="new-tab">
+                <i class="fa-solid fa-plus"></i>
+                <span>New Note</span>
+            </button>
+        </div>
+        
+        <div class="editor-container" id="editor-container">
+            <!-- Editors will be dynamically created here -->
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <i class="fa-solid fa-font"></i>
+                <span id="word-count">Words: 0</span>
+            </div>
+            <div class="status-item">
+                <i class="fa-regular fa-clock"></i>
+                <span id="last-saved">Not saved yet</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="image-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Insert Image</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="image-url" class="form-label">Image URL</label>
+                    <input type="text" id="image-url" class="form-input" placeholder="https://example.com/image.jpg">
+                </div>
+                <div class="form-group">
+                    <label for="image-alt" class="form-label">Alt Text</label>
+                    <input type="text" id="image-alt" class="form-input" placeholder="Description of the image">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="primary-button" id="insert-image-btn">
+                    <i class="fa-solid fa-check"></i>
+                    <span>Insert</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
