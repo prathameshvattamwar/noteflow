@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let notes = [];
     let activeNoteId = null;
     let autoSaveInterval = null;
-    const autoSaveDelay = 5000; // Auto-save every 5 seconds
+    const autoSaveDelay = 5000; 
     let isAutoSaveEnabled = true;
     
     // Generate a unique ID
@@ -89,15 +89,30 @@ document.addEventListener('DOMContentLoaded', function() {
             if (savedNotes && Array.isArray(savedNotes) && savedNotes.length > 0) {
                 notes = savedNotes;
                 
-                // Create tabs for each note
+                // Create tabs for ALL notes, regardless of closed status
                 notes.forEach(note => {
                     createTab(note.id, note.title);
                     createEditor(note.id, note.content);
+                    
+                    // Remember that this tab was previously closed by adding a data attribute
+                    if (note.closed) {
+                        const tab = document.querySelector(`.tab[data-note-id="${note.id}"]`);
+                        if (tab) {
+                            tab.dataset.wasClosed = "true";
+                        }
+                        
+                        // Remove the closed status as we're showing it now
+                        note.closed = false;
+                        delete note.closedAt;
+                    }
                 });
                 
                 // Activate the first note
                 activateNote(notes[0].id);
-                showNotification('Notes loaded successfully');
+                showNotification('All notes restored successfully');
+                
+                // Save notes with updated status
+                saveNotes(true);
             } else {
                 console.log("No saved notes found, creating new note");
                 createNewNote();
@@ -345,35 +360,42 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Delete a note
     function deleteNote(id) {
-        // Check if there's only one note left
-        if (notes.length <= 1) {
-            showNotification("You can't delete the last note. Create a new one first.", "warning");
+        // Check if there's only one visible note left
+        const visibleNotes = notes.filter(note => !note.closed);
+        if (visibleNotes.length <= 1) {
+            showNotification("You can't close the last visible note. Create a new one first.", "warning");
             return;
         }
         
         try {
-            // Remove from notes array
+            // Instead of removing from array, mark as closed
             const noteIndex = notes.findIndex(note => note.id === id);
             if (noteIndex !== -1) {
-                notes.splice(noteIndex, 1);
+                // Mark the note as closed rather than deleting it
+                notes[noteIndex].closed = true;
+                notes[noteIndex].closedAt = new Date().toISOString();
             }
             
-            // Remove tab and editor
+            // Remove tab and editor from display
             const tab = document.querySelector(`.tab[data-note-id="${id}"]`);
             const editor = document.getElementById(`editor-${id}`);
             
             if (tab) tab.remove();
-            if (editor) editor.remove();
+            if (editor) editor.style.display = 'none';
             
-            // If deleting active note, activate another one
-            if (activeNoteId === id && notes.length > 0) {
-                activateNote(notes[0].id);
+            // If closing active note, activate another one
+            if (activeNoteId === id) {
+                // Find the first visible note
+                const nextVisibleNote = notes.find(note => !note.closed);
+                if (nextVisibleNote) {
+                    activateNote(nextVisibleNote.id);
+                }
             }
             
             saveNotes(true);
         } catch (error) {
-            console.error("Error deleting note:", error);
-            showNotification('Error deleting note', 'error');
+            console.error("Error closing note:", error);
+            showNotification('Error closing note', 'error');
         }
     }
     
@@ -925,4 +947,5 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         showNotification('Welcome to NoteFlow! Changes auto-save every 5 seconds.');
     }, 1000);
+
 });
