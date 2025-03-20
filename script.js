@@ -447,10 +447,48 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Setup format buttons with toggled state
     function setupFormatButtons() {
-        handleFormatToggle(boldButton, 'bold');
-        handleFormatToggle(italicButton, 'italic');
-        handleFormatToggle(underlineButton, 'underline');
-        handleFormatToggle(strikethroughButton, 'strikeThrough');
+        // Clear existing event listeners first
+        boldButton.removeEventListener('click', () => execFormatCommand('bold'));
+        italicButton.removeEventListener('click', () => execFormatCommand('italic'));
+        underlineButton.removeEventListener('click', () => execFormatCommand('underline'));
+        strikethroughButton.removeEventListener('click', () => execFormatCommand('strikeThrough'));
+        
+        // Add correct event listeners for text style buttons
+        boldButton.addEventListener('click', () => {
+            execFormatCommand('bold');
+            updateButtonStates();
+        });
+        
+        italicButton.addEventListener('click', () => {
+            execFormatCommand('italic');
+            updateButtonStates();
+        });
+        
+        underlineButton.addEventListener('click', () => {
+            execFormatCommand('underline');
+            updateButtonStates();
+        });
+        
+        strikethroughButton.addEventListener('click', () => {
+            execFormatCommand('strikeThrough');
+            updateButtonStates();
+        });
+        
+        // Alignment buttons
+        alignLeftButton.addEventListener('click', () => {
+            execFormatCommand('justifyLeft');
+            updateButtonStates();
+        });
+        
+        alignCenterButton.addEventListener('click', () => {
+            execFormatCommand('justifyCenter');
+            updateButtonStates();
+        });
+        
+        alignRightButton.addEventListener('click', () => {
+            execFormatCommand('justifyRight');
+            updateButtonStates();
+        });
         
         // Add tooltip support for buttons
         document.querySelectorAll('.icon-button, .color-control label').forEach(button => {
@@ -464,23 +502,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check for formatting state and update button UI
     function updateButtonStates() {
-        const commandStates = {
-            'bold': boldButton,
-            'italic': italicButton,
-            'underline': underlineButton,
-            'strikeThrough': strikethroughButton,
-            'justifyLeft': alignLeftButton,
-            'justifyCenter': alignCenterButton,
-            'justifyRight': alignRightButton
-        };
+        if (!activeNoteId) return;
         
-        for (const [command, button] of Object.entries(commandStates)) {
-            if (document.queryCommandState(command)) {
-                button.classList.add('active');
-            } else {
-                button.classList.remove('active');
-            }
-        }
+        const activeEditor = document.getElementById(`editor-${activeNoteId}`);
+        if (!activeEditor) return;
+        
+        // Focus the editor to ensure commands work properly
+        activeEditor.focus();
+        
+        // Check states
+        boldButton.classList.toggle('active', document.queryCommandState('bold'));
+        italicButton.classList.toggle('active', document.queryCommandState('italic'));
+        underlineButton.classList.toggle('active', document.queryCommandState('underline'));
+        strikethroughButton.classList.toggle('active', document.queryCommandState('strikeThrough'));
+        alignLeftButton.classList.toggle('active', document.queryCommandState('justifyLeft'));
+        alignCenterButton.classList.toggle('active', document.queryCommandState('justifyCenter'));
+        alignRightButton.classList.toggle('active', document.queryCommandState('justifyRight'));
     }
     
     // Theme toggle functionality
@@ -713,16 +750,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Format buttons
-    boldButton.addEventListener('click', () => execFormatCommand('bold'));
-    italicButton.addEventListener('click', () => execFormatCommand('italic'));
-    underlineButton.addEventListener('click', () => execFormatCommand('underline'));
-    strikethroughButton.addEventListener('click', () => execFormatCommand('strikeThrough'));
-    
-    alignLeftButton.addEventListener('click', () => execFormatCommand('justifyLeft'));
-    alignCenterButton.addEventListener('click', () => execFormatCommand('justifyCenter'));
-    alignRightButton.addEventListener('click', () => execFormatCommand('justifyRight'));
-    
+    // Format buttons    
     orderedListButton.addEventListener('click', () => execFormatCommand('insertOrderedList'));
     unorderedListButton.addEventListener('click', () => execFormatCommand('insertUnorderedList'));
     
@@ -768,6 +796,124 @@ document.addEventListener('DOMContentLoaded', function() {
     enhanceTitleEditing();
     setupAutoSaveIndicator();
     setupImageInsertion();
+    setupUndoRedo();
+    setupToolbarToggle(); 
+    enhanceSelectionHandling(); 
+
+    // Add undo/redo functionality
+    function setupUndoRedo() {
+        const header = document.querySelector('.header-actions');
+        
+        // Insert undo/redo buttons before theme toggle
+        const undoRedoGroup = document.createElement('div');
+        undoRedoGroup.className = 'undo-redo-group';
+        undoRedoGroup.innerHTML = `
+            <button id="undo-button" class="icon-button" data-tooltip="Undo (Ctrl+Z)">
+                <i class="fa-solid fa-undo"></i>
+            </button>
+            <button id="redo-button" class="icon-button" data-tooltip="Redo (Ctrl+Y)">
+                <i class="fa-solid fa-redo"></i>
+            </button>
+        `;
+        
+        header.insertBefore(undoRedoGroup, themeToggleButton);
+        
+        // Get references to new buttons
+        const undoButton = document.getElementById('undo-button');
+        const redoButton = document.getElementById('redo-button');
+        
+        // Add event listeners
+        undoButton.addEventListener('click', () => {
+            document.execCommand('undo', false);
+        });
+        
+        redoButton.addEventListener('click', () => {
+            document.execCommand('redo', false);
+        });
+        
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey) {
+                if (e.key === 'z') {
+                    e.preventDefault();
+                    document.execCommand('undo', false);
+                } else if (e.key === 'y') {
+                    e.preventDefault();
+                    document.execCommand('redo', false);
+                }
+            }
+        });
+    }
+
+    // Add toolbar toggle functionality
+    function setupToolbarToggle() {
+        const header = document.querySelector('header');
+        const toolbar = document.querySelector('.toolbar');
+        
+        // Create toggle button
+        const toggleButton = document.createElement('button');
+        toggleButton.id = 'toolbar-toggle';
+        toggleButton.className = 'icon-button';
+        toggleButton.setAttribute('data-tooltip', 'Toggle Toolbar');
+        toggleButton.innerHTML = '<i class="fa-solid fa-chevron-up"></i>';
+        
+        // Insert at beginning of header actions
+        const headerActions = document.querySelector('.header-actions');
+        headerActions.appendChild(toggleButton);
+        
+        // Initial state
+        let toolbarVisible = true;
+        
+        // Toggle function
+        function toggleToolbar() {
+            if (toolbarVisible) {
+                toolbar.style.display = 'none';
+                toggleButton.innerHTML = '<i class="fa-solid fa-chevron-down"></i>';
+                toggleButton.setAttribute('data-tooltip', 'Show Toolbar');
+            } else {
+                toolbar.style.display = 'flex';
+                toggleButton.innerHTML = '<i class="fa-solid fa-chevron-up"></i>';
+                toggleButton.setAttribute('data-tooltip', 'Hide Toolbar');
+            }
+            toolbarVisible = !toolbarVisible;
+            
+            // Save preference
+            StorageHandler.set('noteflowToolbarVisible', toolbarVisible);
+        }
+        
+        // Add click event
+        toggleButton.addEventListener('click', toggleToolbar);
+        
+        // Check for saved preference
+        const savedPreference = StorageHandler.get('noteflowToolbarVisible');
+        if (savedPreference === false) {
+            toggleToolbar();
+        }
+    }
+
+    // Enhance selection handling
+    function enhanceSelectionHandling() {
+        // Add click event to current editor
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.editor')) {
+                updateButtonStates();
+            }
+        });
+        
+        // Add mouseup event to current editor
+        document.addEventListener('mouseup', (e) => {
+            if (e.target.closest('.editor')) {
+                updateButtonStates();
+            }
+        });
+        
+        // Add keyup event to current editor
+        document.addEventListener('keyup', (e) => {
+            if (e.target.closest('.editor')) {
+                updateButtonStates();
+            }
+        });
+    }
     
     // Initialize app
     loadNotes();
