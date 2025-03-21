@@ -948,4 +948,330 @@ document.addEventListener('DOMContentLoaded', function() {
         showNotification('Welcome to NoteFlow! Changes auto-save every 5 seconds.');
     }, 1000);
 
+    // Settings functionality
+    function setupSettings() {
+        const settingsButton = document.getElementById('settings-button');
+        const settingsDropdown = document.getElementById('settings-dropdown');
+        const autoSaveToggle = document.getElementById('auto-save-toggle');
+        const wordWrapToggle = document.getElementById('word-wrap-toggle');
+        // const lineNumbersToggle = document.getElementById('line-numbers-toggle');
+        const fontSizeRange = document.getElementById('font-size-range');
+        const fontSizeValue = document.getElementById('font-size-value');
+        const showShortcutsBtn = document.getElementById('show-shortcuts');
+        const shortcutsDialog = document.getElementById('shortcuts-dialog');
+        
+        // Toggle settings dropdown
+        settingsButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settingsDropdown.classList.toggle('show');
+        });
+        
+        // Close settings dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!settingsDropdown.contains(e.target) && e.target !== settingsButton) {
+                settingsDropdown.classList.remove('show');
+            }
+        });
+        
+        // Auto save toggle
+        autoSaveToggle.checked = isAutoSaveEnabled;
+        autoSaveToggle.addEventListener('change', () => {
+            isAutoSaveEnabled = autoSaveToggle.checked;
+            
+            // Update auto-save status in UI
+            const stateElement = document.querySelector('.auto-save-state');
+            if (stateElement) {
+                if (isAutoSaveEnabled) {
+                    resetAutoSaveTimer();
+                    stateElement.textContent = 'ON';
+                    stateElement.style.color = 'var(--success-color)';
+                    showNotification('Auto-save enabled');
+                } else {
+                    clearInterval(autoSaveInterval);
+                    autoSaveInterval = null;
+                    stateElement.textContent = 'OFF';
+                    stateElement.style.color = 'var(--danger-color)';
+                    showNotification('Auto-save disabled', 'warning');
+                }
+            }
+            
+            // Save preference
+            StorageHandler.set('noteflowAutoSave', isAutoSaveEnabled);
+        });
+        
+        // Word wrap toggle
+        const wordWrapPreference = StorageHandler.get('noteflowWordWrap');
+        wordWrapToggle.checked = wordWrapPreference !== false;
+        toggleWordWrap(wordWrapToggle.checked);
+        
+        wordWrapToggle.addEventListener('change', () => {
+            const isEnabled = wordWrapToggle.checked;
+            toggleWordWrap(isEnabled);
+            StorageHandler.set('noteflowWordWrap', isEnabled);
+        });
+        
+        // Line numbers toggle
+        // const lineNumbersPreference = StorageHandler.get('noteflowLineNumbers');
+        // lineNumbersToggle.checked = lineNumbersPreference === true;
+        // toggleLineNumbers(lineNumbersToggle.checked);
+        
+        // lineNumbersToggle.addEventListener('change', () => {
+        //     const isEnabled = lineNumbersToggle.checked;
+        //     toggleLineNumbers(isEnabled);
+        //     StorageHandler.set('noteflowLineNumbers', isEnabled);
+        // });
+        
+        // Font size range
+        const savedFontSize = StorageHandler.get('noteflowFontSize') || 16;
+        fontSizeRange.value = savedFontSize;
+        fontSizeValue.textContent = `${savedFontSize}px`;
+        updateEditorFontSize(savedFontSize);
+        
+        fontSizeRange.addEventListener('input', () => {
+            const size = fontSizeRange.value;
+            fontSizeValue.textContent = `${size}px`;
+            updateEditorFontSize(size);
+            StorageHandler.set('noteflowFontSize', size);
+        });
+        
+        // Show shortcuts dialog
+        showShortcutsBtn.addEventListener('click', () => {
+            shortcutsDialog.classList.add('show');
+            settingsDropdown.classList.remove('show');
+        });
+        
+        // Close shortcuts dialog
+        shortcutsDialog.addEventListener('click', (e) => {
+            if (e.target === shortcutsDialog || e.target.classList.contains('modal-close')) {
+                shortcutsDialog.classList.remove('show');
+            }
+        });
+    }
+
+    // Toggle word wrap
+    function toggleWordWrap(enabled) {
+        document.querySelectorAll('.editor').forEach(editor => {
+            if (enabled) {
+                editor.style.whiteSpace = 'pre-wrap';
+                editor.style.overflowWrap = 'break-word';
+            } else {
+                editor.style.whiteSpace = 'pre';
+                editor.style.overflowWrap = 'normal';
+            }
+        });
+        
+        if (enabled) {
+            showNotification('Word wrap enabled');
+        } else {
+            showNotification('Word wrap disabled');
+        }
+    }
+
+    // Toggle line numbers
+    function toggleLineNumbers(enabled) {
+        const editorContainerEl = document.getElementById('editor-container');
+        
+        if (enabled) {
+            editorContainerEl.classList.add('with-line-numbers');
+            updateLineNumbers();
+            showNotification('Line numbers enabled');
+        } else {
+            editorContainerEl.classList.remove('with-line-numbers');
+            // Remove existing line numbers
+            document.querySelectorAll('.line-numbers').forEach(el => el.remove());
+            showNotification('Line numbers disabled');
+        }
+    }
+
+    // Update line numbers for the active editor
+    function updateLineNumbers() {
+        if (!document.getElementById('line-numbers-toggle').checked) return;
+        
+        // Remove existing line numbers
+        document.querySelectorAll('.line-numbers').forEach(el => el.remove());
+        
+        if (!activeNoteId) return;
+        
+        const editor = document.getElementById(`editor-${activeNoteId}`);
+        if (!editor) return;
+        
+        const lineCount = editor.innerText.split('\n').length;
+        const lineNumbersEl = document.createElement('div');
+        lineNumbersEl.className = 'line-numbers';
+        
+        let lineNumbersHtml = '';
+        for (let i = 1; i <= lineCount; i++) {
+            lineNumbersHtml += `${i}<br>`;
+        }
+        
+        lineNumbersEl.innerHTML = lineNumbersHtml;
+        editor.parentNode.insertBefore(lineNumbersEl, editor);
+        
+        // Make sure line numbers scrolls with editor
+        editor.addEventListener('scroll', () => {
+            lineNumbersEl.scrollTop = editor.scrollTop;
+        });
+    }
+
+    // Update editor font size
+    function updateEditorFontSize(size) {
+        document.querySelectorAll('.editor').forEach(editor => {
+            editor.style.fontSize = `${size}px`;
+        });
+    }
+
+    // Enhanced keyboard shortcuts setup
+    function setupEnhancedKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Only process if an editor is active and focused
+            const activeEditor = document.activeElement.closest('.editor');
+            if (!activeEditor) return;
+            
+            if (e.ctrlKey) {
+                switch (e.key.toLowerCase()) {
+                    // Text formatting
+                    case 'b': // Bold
+                        e.preventDefault();
+                        execFormatCommand('bold');
+                        break;
+                    case 'i': // Italic
+                        e.preventDefault();
+                        execFormatCommand('italic');
+                        break;
+                    case 'u': // Underline
+                        e.preventDefault();
+                        execFormatCommand('underline');
+                        break;
+                    
+                    // Alignment
+                    case 'r': // Align Left
+                        e.preventDefault();
+                        execFormatCommand('justifyLeft');
+                        updateButtonStates();
+                        break;
+                    case 'c': // Align Center (using | key)
+                        e.preventDefault();
+                        execFormatCommand('justifyCenter');
+                        updateButtonStates();
+                        break;
+                    case 'l': // Align Right
+                        e.preventDefault();
+                        execFormatCommand('justifyRight');
+                        updateButtonStates();
+                        break;
+                    
+                    // Lists
+                    case '7': // Ordered List
+                        if (e.shiftKey) {
+                            e.preventDefault();
+                            execFormatCommand('insertOrderedList');
+                            updateButtonStates();
+                        }
+                        break;
+                    case '8': // Unordered List
+                        if (e.shiftKey) {
+                            e.preventDefault();
+                            execFormatCommand('insertUnorderedList');
+                            updateButtonStates();
+                        }
+                        break;
+                    
+                    case 'x': // Strikethrough
+                        if (e.shiftKey) {
+                            e.preventDefault();
+                            execFormatCommand('strikeThrough');
+                            updateButtonStates();
+                        }
+                        break;
+                    
+                    // Indentation
+                    case '.': // Indent (>)
+                        if (e.shiftKey) {
+                            e.preventDefault();
+                            execFormatCommand('indent');
+                        }
+                        break;
+                    case ',': // Outdent (<)
+                        if (e.shiftKey) {
+                            e.preventDefault();
+                            execFormatCommand('outdent');
+                        }
+                        break;
+                    
+                    // App functions already implemented
+                    case 's': // Save
+                    case 'n': // New Note
+                    case 'z': // Undo
+                    case 'y': // Redo
+                        // These are already handled
+                        break;
+                    
+                    // Link
+                    case 'k': // Insert Link
+                        e.preventDefault();
+                        const url = prompt('Enter the URL:');
+                        if (url) {
+                            execFormatCommand('createLink', url);
+                        }
+                        break;
+                }
+            } else if (e.key === 'Tab') {
+                // Tab key for indentation
+                if (e.shiftKey) {
+                    e.preventDefault();
+                    execFormatCommand('outdent');
+                } else {
+                    e.preventDefault();
+                    execFormatCommand('indent');
+                }
+            }
+        });
+    }
+
+    // Update line numbers on content change
+    function setupLineNumberUpdates() {
+        document.addEventListener('input', (e) => {
+            if (e.target.classList.contains('editor')) {
+                // Debounce for performance
+                clearTimeout(window.lineNumberUpdateTimeout);
+                window.lineNumberUpdateTimeout = setTimeout(() => {
+                    updateLineNumbers();
+                }, 200);
+            }
+        });
+    }
+
+    // Load saved settings
+    function loadSavedSettings() {
+        // Auto save preference
+        const savedAutoSave = StorageHandler.get('noteflowAutoSave');
+        if (savedAutoSave !== null) {
+            isAutoSaveEnabled = savedAutoSave;
+            
+            // Update UI element if it exists
+            const autoSaveState = document.querySelector('.auto-save-state');
+            if (autoSaveState) {
+                autoSaveState.textContent = isAutoSaveEnabled ? 'ON' : 'OFF';
+                autoSaveState.style.color = isAutoSaveEnabled ? 'var(--success-color)' : 'var(--danger-color)';
+            }
+            
+            if (isAutoSaveEnabled) {
+                resetAutoSaveTimer();
+            } else {
+                clearInterval(autoSaveInterval);
+                autoSaveInterval = null;
+            }
+        }
+    }
+
+    // Function to call in the main init section
+    function initializeEnhancements() {
+        setupSettings();
+        setupEnhancedKeyboardShortcuts();
+        setupLineNumberUpdates();
+        loadSavedSettings();
+    }
+
+    initializeEnhancements();
+
 });
