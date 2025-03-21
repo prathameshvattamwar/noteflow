@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head> 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NoteFlow - Enhanced Notepad</title>
@@ -153,6 +153,12 @@
                     <input type="color" id="highlight-color" class="color-picker" value="#ffff00">
                 </div>
             </div>
+
+            <div class="toolbar-group settings-group">
+                <button id="settings-button" class="icon-button" title="Settings">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
         </div>
         
         <div class="tabs" id="tabs">
@@ -199,6 +205,135 @@
                     <i class="fa-solid fa-check"></i>
                     <span>Insert</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-dropdown" class="settings-dropdown">
+        <div class="settings-header">
+            <h3>Settings</h3>
+        </div>
+        <div class="settings-body">
+            <div class="settings-section">
+                <h4>Application</h4>
+                <div class="settings-option">
+                    <label for="auto-save-toggle">Auto Save</label>
+                    <label class="switch">
+                        <input type="checkbox" id="auto-save-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="settings-option">
+                    <label for="word-wrap-toggle">Word Wrap</label>
+                    <label class="switch">
+                        <input type="checkbox" id="word-wrap-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <!-- <div class="settings-option">
+                    <label for="line-numbers-toggle">Line Numbers</label>
+                    <label class="switch">
+                        <input type="checkbox" id="line-numbers-toggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div> -->
+            </div>
+            <div class="settings-section">
+                <h4>Appearance</h4>
+                <div class="settings-option">
+                    <label for="font-size-range">Editor Font Size</label>
+                    <input type="range" id="font-size-range" min="12" max="24" value="16">
+                    <span id="font-size-value">16px</span>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h4>Keyboard Shortcuts</h4>
+                <button id="show-shortcuts" class="secondary-button">
+                    <i class="fa-solid fa-keyboard"></i>
+                    <span>View Shortcuts</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shortcuts Dialog -->
+    <div id="shortcuts-dialog" class="modal-overlay">
+        <div class="modal shortcuts-modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Keyboard Shortcuts</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="shortcuts-container">
+                    <div class="shortcuts-column">
+                        <h4>Text Formatting</h4>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Ctrl + B</span>
+                            <span class="shortcut-desc">Bold</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Ctrl + I</span>
+                            <span class="shortcut-desc">Italic</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Ctrl + U</span>
+                            <span class="shortcut-desc">Underline</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Ctrl + Shift + X</span>
+                            <span class="shortcut-desc">Strikethrough</span>
+                        </div>
+                        <h4>Alignment</h4>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Ctrl + R</span>
+                            <span class="shortcut-desc">Align Left</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Ctrl + C</span>
+                            <span class="shortcut-desc">Align Center</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Ctrl + L</span>
+                            <span class="shortcut-desc">Align Right</span>
+                        </div>
+                    </div>
+                    <div class="shortcuts-column">
+                        <h4>Lists & Indentation</h4>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Ctrl + Shift + 7</span>
+                            <span class="shortcut-desc">Ordered List</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Ctrl + Shift + 8</span>
+                            <span class="shortcut-desc">Unordered List</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Tab</span>
+                            <span class="shortcut-desc">Indent</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Shift + Tab</span>
+                            <span class="shortcut-desc">Outdent</span>
+                        </div>
+                        <h4>Application</h4>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Ctrl + S</span>
+                            <span class="shortcut-desc">Save All Notes</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Ctrl + N</span>
+                            <span class="shortcut-desc">New Note</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Ctrl + Z</span>
+                            <span class="shortcut-desc">Undo</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="shortcut-keys">Ctrl + Y</span>
+                            <span class="shortcut-desc">Redo</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
